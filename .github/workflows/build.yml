@@ -8,7 +8,7 @@ on:
 
 jobs:
   linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -21,18 +21,9 @@ jobs:
       - name: install GoogleTest
         run: .build/install-gtest
       - name: install include-what-you-use (iwyu)
-        # NB: https://packages.ubuntu.com/jammy/iwyu apparently doesn't declare the `libclang-common-XXX-dev` package it
-        # needs as a dependency (without it, `include-what-you-use` fails with "fatal error: 'stddef.h' file not found"
-        # or similar), although this problem has been reported in 7 out of 7 bug reports at
-        # https://bugs.launchpad.net/ubuntu/+source/iwyu, the oldest being from 2014.
-        #
-        # Therefore, we deliberately require a fixed version of `iwyu` along with the compatible
-        # `libclang-common-XXX-dev` package. When a new version becomes available and we want to update to it, we'll
-        # have to change this hardcoded version manually and bump the `libclang-common-XXX-dev` version accordingly (see
-        # https://github.com/include-what-you-use/include-what-you-use/blob/master/README.md#clang-compatibility).
         run: |
           sudo apt-get update
-          sudo apt-get install -y iwyu=8.17-1 libclang-common-13-dev
+          sudo apt-get install -y iwyu
       - name: build
         env:
           CPP_STANDARD: ${{ matrix.cpp-standard }}
@@ -92,7 +83,7 @@ jobs:
           docker rm u710
   windows:
     runs-on: windows-latest
-    # NB: see https://github.com/actions/runner-images/blob/main/images/win/Windows2022-Readme.md for what's available in this image
+    # NB: see https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md for what's available in this image
     steps:
       - uses: actions/checkout@v4
       - name: restore
@@ -103,14 +94,14 @@ jobs:
         run: .build\build.ps1 -GTestPath C:\vcpkg\installed\x64-windows
       - name: unittest
         run: .build\run-unittest.ps1
-  freebsd_14_0:
+  freebsd_14_2:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Run in FreeBSD
         uses: vmactions/freebsd-vm@v1
         with:
-          release: "14.0"
+          release: "14.2"
           usesh: true
           prepare: |
             pkg install -y cmake googletest
@@ -130,7 +121,7 @@ jobs:
 
             echo '#### Testing'
             .build/run-unittest
-  netbsd_10_0:
+  netbsd_10_1:
     runs-on: ubuntu-latest
     # Doesn't use clang, has gcc:
     # c++ (nb3 20231008) 10.5.0
@@ -140,7 +131,7 @@ jobs:
       - name: Run in NetBSD
         uses: vmactions/netbsd-vm@v1
         with:
-          release: "10.0"
+          release: "10.1"
           usesh: true
           prepare: |
             /usr/sbin/pkg_add cmake googletest
